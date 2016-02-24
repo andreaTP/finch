@@ -11,14 +11,14 @@ class EndToEndSpec extends FinchSpec {
   it should "convert coproduct Endpoints into Services" in {
     case class Foo(s: String)
 
-    implicit val encodeFoo: EncodeResponse[Foo] =
-      EncodeResponse.fromString("text/plain")(_.s)
+    implicit val encodeFoo: Encode[Foo] =
+      Encode.fromString("text/plain")(_.s)
 
-    implicit val decodeFoo: DecodeRequest[Foo] =
-      DecodeRequest.instance(s => Return(Foo(s)))
+    implicit val decodeFoo: Decode[Foo] =
+      Decode.instance(s => Return(Foo(s)))
 
-    implicit val encodeException: EncodeResponse[Exception] =
-      EncodeResponse.fromString("text/plain")(_ => "ERR!")
+    implicit val encodeException: Encode[Exception] =
+      Encode.fromString("text/plain")(_ => "ERR!")
 
     val service: Service[Request, Response] = (
       get("foo" :: string) { s: String => Ok(Foo(s)) } :+:

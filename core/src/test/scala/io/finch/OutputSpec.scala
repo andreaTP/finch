@@ -15,7 +15,7 @@ class OutputSpec extends FinchSpec {
     check { (o: Output[String], cs: OptionalNonEmptyString) =>
       val rep = o.withCharset(cs.o).toResponse()
       (rep.content === Buf.Empty) ||
-      (rep.charset === cs.o.orElse(EncodeResponse.encodeString.charset))
+      (rep.charset === cs.o.orElse(Encode.encodeString.charset))
     }
   }
 
@@ -23,7 +23,7 @@ class OutputSpec extends FinchSpec {
     check { (o: Output[String], ct: OptionalNonEmptyString) =>
       val rep = o.withContentType(ct.o).toResponse()
       (rep.content === Buf.Empty) ||
-      rep.contentType.forall(_.startsWith(ct.o.getOrElse(EncodeResponse.encodeString.contentType)))
+      rep.contentType.forall(_.startsWith(ct.o.getOrElse(Encode.encodeString.contentType)))
     }
   }
 
@@ -74,7 +74,7 @@ class OutputSpec extends FinchSpec {
 
   it should "propagate cause to response" in {
     check { of: Output.Failure =>
-      (of: Output[Unit]).toResponse().content === EncodeResponse.encodeException(of.cause)
+      (of: Output[Unit]).toResponse().content === Encode.encodeException(of.cause)
     }
   }
 
@@ -87,7 +87,7 @@ class OutputSpec extends FinchSpec {
   it should "propagate payload to response" in {
     check { op: Output.Payload[String] =>
       Some(op.toResponse().contentString) ===
-        Buf.Utf8.unapply(EncodeResponse.encodeString(op.value))
+        Buf.Utf8.unapply(Encode.encodeString(op.value))
     }
   }
 }

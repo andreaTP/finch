@@ -6,13 +6,13 @@ import com.twitter.finagle.Service
 import io.finch._
 
 class FinchUserService(implicit
-  userDecoder: DecodeRequest[User],
-  newUserInfoDecoder: DecodeRequest[NewUserInfo],
-  userEncoder: EncodeResponse[User],
-  usersEncoder: EncodeResponse[List[User]]
+  userDecoder: Decode[User],
+  newUserInfoDecoder: Decode[NewUserInfo],
+  userEncoder: Encode.ApplicationJson[User],
+  usersEncoder: Encode.ApplicationJson[List[User]]
 ) extends UserService {
 
-  val getUser: Endpoint[User] = get("users" / long) { id: Long =>
+  val getUser: Endpoint[User] = get("users" :: long) { id: Long =>
     db.get(id).map {
       case Some(user) => Ok(user)
       case None => throw UserNotFound(id)
@@ -23,7 +23,7 @@ class FinchUserService(implicit
     db.all.map(Ok)
   }
 
-  val postUser: Endpoint[Unit] = post("users" ? body.as[NewUserInfo]) { u: NewUserInfo =>
+  val postUser: Endpoint[Unit] = post("users" :: body.as[NewUserInfo]) { u: NewUserInfo =>
       db.add(u.name, u.age)
         .map(id => Output.unit(http.Status.Created).withHeader("Location" -> s"/users/$id"))
   }
@@ -32,7 +32,7 @@ class FinchUserService(implicit
     db.delete().map(count => Ok(s"$count users deleted"))
   }
 
-  val putUser: Endpoint[Unit] = put("users" ? body.as[User]) { u: User =>
+  val putUser: Endpoint[Unit] = put("users" :: body.as[User]) { u: User =>
     db.update(u).map(_ => NoContent[Unit])
   }
 

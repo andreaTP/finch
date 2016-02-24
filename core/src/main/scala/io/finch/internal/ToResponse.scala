@@ -3,7 +3,8 @@ package io.finch.internal
 import com.twitter.concurrent.AsyncStream
 import com.twitter.finagle.http.{Response, Status, Version}
 import com.twitter.io.{Buf, Reader}
-import io.finch.EncodeResponse
+import io.finch.Encode
+import shapeless.Witness
 
 /**
  * Represents a conversion from `A` to [[Response]].
@@ -28,15 +29,16 @@ object ToResponse {
 
   implicit val responseToResponse: ToResponse[Response] = instance(identity)
 
-  implicit def encodeableToResponse[A](implicit e: EncodeResponse[A]): ToResponse[A] =
-    instance { a =>
-      val rep = Response()
-      rep.content = e(a)
-      rep.contentType = e.contentType
-      e.charset.foreach { cs => rep.charset = cs }
+  implicit def encodeableToResponse[A, CT <: String](implicit
+    e: Encode.Aux[A, CT],
+    w: Witness.Aux[CT]
+  ): ToResponse[A] = instance { a =>
+    val rep = Response()
+    rep.content = e(a)
+    rep.contentType = w.value
 
-      rep
-    }
+    rep
+  }
 
   /**
    * Provides implicit ToResponse for `AsyncStream[Buf]`.
