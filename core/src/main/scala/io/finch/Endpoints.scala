@@ -303,20 +303,29 @@ trait Endpoints {
       else None
     )
 
+  private[this] val stringExtractorLike = new {
+    def f = {s: String => Option(s)}
+  }
   /**
    * An evaluating [[Endpoint]] that reads an optional query-string param `name` from the request
-   * into an `Option`.
+   * into an `Option` of the requested type.
    */
+  def paramOption[A](name: String, extractor: { def f: String => Option[A] }): Endpoint[Option[A]] =
+    option(items.ParamItem(name))(s => requestParam(name)(s).map(extractor.f).flatten)
+
   def paramOption(name: String): Endpoint[Option[String]] =
-    option(items.ParamItem(name))(requestParam(name)).noneIfEmpty
+    paramOption(name, stringExtractorLike).noneIfEmpty
 
   /**
    * An evaluating [[Endpoint]] that reads a required query-string param `name` from the
    * request or raises an [[Error.NotPresent]] exception when the param is missing; an
    * [[Error.NotValid]] exception is the param is empty.
    */
+  def param[A](name: String, extractor: { def f: String => Option[A] }): Endpoint[A] =
+    paramOption(name, extractor).failIfNone
+
   def param(name: String): Endpoint[String] =
-    paramOption(name).failIfNone.shouldNot(beEmpty)
+    paramOption(name, stringExtractorLike).failIfNone.shouldNot(beEmpty)
 
   /**
    * A matching [[Endpoint]] that only matches the requests that contain a given query-string
